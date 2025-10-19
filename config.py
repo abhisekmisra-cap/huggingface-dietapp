@@ -60,30 +60,25 @@ VALIDATION_CONFIG = {
 # Prompt Templates
 PROMPT_TEMPLATES = {
     "diet_plan_prompt": """
-    Create a personalized diet plan for a person with the following profile:
-    - Age: {age} years old
-    - Weight: {weight} kg
-    - Nationality/Cuisine Preference: {nationality}
-    - Food Habit: {food_habit}
-    - Health Conditions: {diseases}
+    Generate a {food_habit} diet plan for:
+    - Age: {age} years, Weight: {weight} kg
+    - Cuisine: {nationality}
+    - Health: {diseases}
     
-    CRITICAL DIETARY RESTRICTIONS - MUST FOLLOW:
-    - If Food Habit is "vegetarian": ABSOLUTELY NO meat, chicken, fish, seafood, beef, pork, lamb, turkey, or any animal flesh
-    - Vegetarian foods only: vegetables, fruits, grains, dairy, eggs, legumes, nuts, seeds, tofu, paneer
-    - If Food Habit is "non-vegetarian": Include meat, poultry, fish and plant foods
-    - If Food Habit is "both": Mix of vegetarian and non-vegetarian options
+    STRICT {food_habit} REQUIREMENTS:
+    {dietary_restrictions}
     
-    Please create a {food_habit} diet plan with:
-    1. Breakfast (must be {food_habit})
-    2. Lunch (must be {food_habit})
-    3. Dinner (must be {food_habit})
-    4. 2 Snacks (must be {food_habit})
-    5. Portion sizes and nutritional notes
-    6. Consider health conditions: {diseases}
+    Create ONLY {food_habit} meals:
     
-    Remember: This person is {food_habit} - do not suggest any foods that violate this preference.
+    BREAKFAST ({food_habit} only):
     
-    Diet Plan:
+    LUNCH ({food_habit} only):
+    
+    DINNER ({food_habit} only):
+    
+    SNACKS ({food_habit} only):
+    
+    Include portions and nutritional benefits for each meal.
     """,
     
     "system_prompt": """
