@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Diet Plan Generator - Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h1 class="display-4 mb-3">🍎 Personalized Diet Plan Generator</h1>
+                    <p class="lead text-muted">
+                        Get AI-powered, personalized diet recommendations based on your age, weight, 
+                        cuisine preferences, and health conditions.
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ url_for('index') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="age" class="form-label fw-bold">Age</label>
+                            {{ form.age(class="form-control", placeholder="Enter your age") }}
+                            {% if form.age.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.age.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="weight" class="form-label fw-bold">Weight (kg)</label>
+                            {{ form.weight(class="form-control", placeholder="Enter your weight") }}
+                            {% if form.weight.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.weight.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="nationality" class="form-label fw-bold">Nationality/Cuisine Preference</label>
+                        {{ form.nationality(class="form-select") }}
+                        {% if form.nationality.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.nationality.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Health Conditions</label>
+                        <div class="health-conditions">
+                            <div class="row">
+                                {% for subfield in form.diseases %}
+                                    <div class="col-md-6 col-sm-12 mb-2">
+                                        <div class="form-check">
+                                            {{ subfield(class="form-check-input") }}
+                                            {{ subfield.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <small class="text-muted">Select all conditions that apply to you</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="api_token" class="form-label fw-bold">
+                            Hugging Face API Token 
+                            <span class="badge bg-warning text-dark">Optional</span>
+                        </label>
+                        {{ form.api_token(class="form-control", placeholder="Enter your API token for better results") }}
+                        {% if form.api_token.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.api_token.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">
+                            Don't have a token? <a href="{{ url_for('setup') }}" class="text-decoration-none">Get one free here</a>
+                        </small>
+                    </div>
+                    
+                    <div class="text-center">
+                        {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+                    </div>
+                </form>
+                
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="fw-bold mb-2">🔒 Privacy & Security</h6>
+                    <small class="text-muted">
+                        Your data is processed securely and not stored permanently. 
+                        API tokens are only used for your session and not saved.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="display-1 mb-3">🤖</div>
+                <h5 class="card-title">AI-Powered</h5>
+                <p class="card-text">Uses advanced Hugging Face language models to generate personalized recommendations.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="display-1 mb-3">🏥</div>
+                <h5 class="card-title">Health-Aware</h5>
+                <p class="card-text">Considers your specific health conditions to provide safe, appropriate dietary guidance.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <div class="display-1 mb-3">🌍</div>
+                <h5 class="card-title">Culture-Friendly</h5>
+                <p class="card-text">Incorporates your cultural background and cuisine preferences into recommendations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

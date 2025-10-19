@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}About - Diet Plan Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 mb-3">🍎 About Diet Plan Generator</h1>
+                    <p class="lead">AI-powered personalized nutrition recommendations</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <h3>🎯 What We Do</h3>
+                        <p>
+                            Our Diet Plan Generator uses advanced AI language models from Hugging Face 
+                            to create personalized diet recommendations. By considering your age, weight, 
+                            cultural background, and health conditions, we provide tailored nutritional 
+                            guidance that fits your lifestyle.
+                        </p>
+                        
+                        <h3>🤖 How It Works</h3>
+                        <ol>
+                            <li><strong>Profile Creation:</strong> You provide basic information about yourself</li>
+                            <li><strong>AI Processing:</strong> Our system analyzes your data using advanced language models</li>
+                            <li><strong>Personalization:</strong> Dietary recommendations are tailored to your specific needs</li>
+                            <li><strong>Plan Generation:</strong> You receive a comprehensive, personalized diet plan</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <h3>✨ Features</h3>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">🤖 <strong>AI-Powered:</strong> Uses Hugging Face transformer models</li>
+                            <li class="mb-2">🏥 <strong>Health-Aware:</strong> Considers medical conditions</li>
+                            <li class="mb-2">🌍 <strong>Cultural:</strong> Respects cuisine preferences</li>
+                            <li class="mb-2">⚡ <strong>Fast:</strong> Generate plans in seconds</li>
+                            <li class="mb-2">🔒 <strong>Private:</strong> Your data isn't stored</li>
+                            <li class="mb-2">📱 <strong>Responsive:</strong> Works on all devices</li>
+                        </ul>
+                        
+                        <h3>🏥 Supported Health Conditions</h3>
+                        <div class="row">
+                            <div class="col-6">
+                                <ul class="list-unstyled small">
+                                    <li>• Diabetes</li>
+                                    <li>• Hypertension</li>
+                                    <li>• Heart Disease</li>
+                                    <li>• High Cholesterol</li>
+                                    <li>• Obesity</li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <ul class="list-unstyled small">
+                                    <li>• Kidney Disease</li>
+                                    <li>• Celiac Disease</li>
+                                    <li>• Food Allergies</li>
+                                    <li>• And more...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-5">
+
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <h3>🔬 Technology Stack</h3>
+                        <ul>
+                            <li><strong>AI Models:</strong> Hugging Face Transformers</li>
+                            <li><strong>Backend:</strong> Python Flask</li>
+                            <li><strong>Frontend:</strong> Bootstrap 5, HTML5</li>
+                            <li><strong>Forms:</strong> WTForms with validation</li>
+                            <li><strong>API:</strong> Hugging Face Inference API</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <h3>🌍 Supported Cuisines</h3>
+                        <div class="row">
+                            <div class="col-6">
+                                <ul class="list-unstyled small">
+                                    <li>• American</li>
+                                    <li>• Indian</li>
+                                    <li>• Chinese</li>
+                                    <li>• Japanese</li>
+                                    <li>• Italian</li>
+                                    <li>• Mexican</li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <ul class="list-unstyled small">
+                                    <li>• French</li>
+                                    <li>• German</li>
+                                    <li>• British</li>
+                                    <li>• Mediterranean</li>
+                                    <li>• Middle Eastern</li>
+                                    <li>• African</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <h5 class="alert-heading">📞 Need Help?</h5>
+                    <p class="mb-2">
+                        If you're having trouble with the application or need to set up your API token, 
+                        visit our <a href="{{ url_for('setup') }}" class="alert-link">Setup Guide</a>.
+                    </p>
+                    <p class="mb-0">
+                        For technical issues, please check the console application or the command-line version 
+                        of this tool for more detailed error messages.
+                    </p>
+                </div>
+
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading">⚠️ Medical Disclaimer</h5>
+                    <p class="mb-0">
+                        This application provides AI-generated dietary suggestions for informational purposes only. 
+                        It is not a substitute for professional medical advice, diagnosis, or treatment. 
+                        Always consult with qualified healthcare providers before making significant dietary changes, 
+                        especially if you have medical conditions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

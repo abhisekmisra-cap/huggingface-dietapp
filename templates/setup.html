@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Guide - Diet Plan Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-body p-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 mb-3">🔧 Setup Guide</h1>
+                    <p class="lead">Get your free Hugging Face API token for better performance</p>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <h5 class="alert-heading">🆓 It's Completely Free!</h5>
+                    <p class="mb-0">
+                        Hugging Face API tokens are free and give you access to powerful AI models 
+                        without downloading gigabytes of data. The process takes less than 2 minutes!
+                    </p>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <h3 class="mb-4">📝 Step-by-Step Instructions</h3>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Step 1: Create Account</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Go to <a href="https://huggingface.co/join" target="_blank" class="text-decoration-none">huggingface.co/join</a> and create a free account.</p>
+                                <p class="mb-0"><strong>What you need:</strong> Just an email address - no credit card required!</p>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">Step 2: Generate Token</h5>
+                            </div>
+                            <div class="card-body">
+                                <ol>
+                                    <li>Visit <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-decoration-none">huggingface.co/settings/tokens</a></li>
+                                    <li>Click "New token"</li>
+                                    <li>Give it a name like "Diet Plan Generator"</li>
+                                    <li>Select "Read" role (sufficient for this app)</li>
+                                    <li>Click "Generate a token"</li>
+                                    <li>Copy the generated token</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">Step 3: Use Your Token</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Option 1: Web Interface (This Page)</strong></p>
+                                <p>Simply paste your token in the "API Token" field when generating a diet plan.</p>
+                                
+                                <p><strong>Option 2: Set Environment Variable</strong></p>
+                                <div class="bg-light p-3 rounded">
+                                    <h6>Windows (Command Prompt):</h6>
+                                    <code>set HUGGINGFACE_API_TOKEN=your_token_here</code>
+                                    
+                                    <h6 class="mt-3">Windows (PowerShell):</h6>
+                                    <code>$env:HUGGINGFACE_API_TOKEN='your_token_here'</code>
+                                    
+                                    <h6 class="mt-3">Linux/Mac:</h6>
+                                    <code>export HUGGINGFACE_API_TOKEN=your_token_here</code>
+                                </div>
+                                
+                                <p class="mt-3"><strong>Option 3: Command Line</strong></p>
+                                <code>python main.py --token your_token_here --age 30 --weight 70 --nationality Indian</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-5">
+
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <h3>🚀 Quick Test</h3>
+                        <p>Want to test your setup without the web interface?</p>
+                        <div class="bg-light p-3 rounded">
+                            <code>python get_token.py</code>
+                        </div>
+                        <p class="mt-2 small text-muted">
+                            This script will guide you through the process and test your token.
+                        </p>
+                    </div>
+                    
+                    <div class="col-lg-6 mb-4">
+                        <h3>🔍 Troubleshooting</h3>
+                        <ul class="small">
+                            <li><strong>Token not working?</strong> Make sure you copied it completely</li>
+                            <li><strong>403 Forbidden?</strong> Your token might be expired</li>
+                            <li><strong>503 Service Unavailable?</strong> Model is loading, try again in a minute</li>
+                            <li><strong>Rate limited?</strong> Wait a few minutes before trying again</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-success" role="alert">
+                    <h5 class="alert-heading">✅ Benefits of Using API Token</h5>
+                    <ul class="mb-0">
+                        <li>Higher rate limits for API calls</li>
+                        <li>Faster response times</li>
+                        <li>Access to more advanced models</li>
+                        <li>Better reliability</li>
+                        <li>No interruptions during peak usage</li>
+                    </ul>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        🏠 Back to Diet Plan Generator
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
