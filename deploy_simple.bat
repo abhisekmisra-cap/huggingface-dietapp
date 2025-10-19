@@ -87,7 +87,7 @@ echo.
 echo 🚀 Deploying Application
 echo =======================
 echo This may take 5-10 minutes...
-git push azure main
+git push azure master
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo.

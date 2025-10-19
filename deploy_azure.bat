@@ -129,7 +129,7 @@ git remote add azure %DEPLOYMENT_URL%
 
 REM Deploy to Azure
 echo Deploying to Azure (this may take a few minutes)...
-git push azure main
+git push azure master
 
 echo.
 echo ✅ Deployment Complete!
