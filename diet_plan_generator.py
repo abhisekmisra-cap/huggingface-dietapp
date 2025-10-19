@@ -276,11 +276,38 @@ class DietPlanGenerator:
         
         filtered_plan = diet_plan
         
-        # Apply replacements with word boundaries to avoid partial matches
+        # FIRST: Handle complex phrases and parenthetical expressions (before individual word replacements)
+        complex_patterns = [
+            # Parenthetical lists containing any non-veg items - replace entire list
+            (r'lean protein \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'lean protein (tofu, legumes, paneer)'),
+            (r'protein sources? \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'protein sources (tofu, legumes, paneer, nuts)'),
+            (r'protein options? \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'protein options (tofu, legumes, paneer, nuts)'),
+            (r'\([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', '(tofu, legumes, paneer)'),
+            
+            # Common problematic phrases
+            (r'chicken,?\s+fish,?\s+(?:tofu|legumes|or\s+\w+)', 'tofu, legumes, paneer'),
+            (r'fish,?\s+chicken,?\s+(?:tofu|legumes|or\s+\w+)', 'tofu, legumes, paneer'),
+            (r'(?:chicken|fish|meat|eggs?),?\s+(?:chicken|fish|meat|eggs?),?\s+(?:tofu|legumes)', 'tofu, legumes, paneer'),
+        ]
+        
+        for pattern, replacement in complex_patterns:
+            filtered_plan = re.sub(pattern, replacement, filtered_plan, flags=re.IGNORECASE)
+        
+        # SECOND: Apply individual word replacements with word boundaries
         for non_veg_item, veg_replacement in vegetarian_replacements.items():
             # Use word boundaries for better matching
             pattern = re.compile(r'\b' + re.escape(non_veg_item) + r'\b', re.IGNORECASE)
             filtered_plan = pattern.sub(veg_replacement, filtered_plan)
+        
+        # Final cleanup - remove any remaining references that might have been missed
+        final_cleanup = [
+            (r'\b(?:chicken|fish|meat|beef|pork|lamb|mutton|turkey|duck)\b', 'tofu'),
+            (r'\beggs?\b', 'legumes'),
+            (r'\bseafood\b', 'vegetables'),
+        ]
+        
+        for pattern, replacement in final_cleanup:
+            filtered_plan = re.sub(pattern, replacement, filtered_plan, flags=re.IGNORECASE)
         
         # Add a note if any replacements were made
         if filtered_plan != diet_plan:
