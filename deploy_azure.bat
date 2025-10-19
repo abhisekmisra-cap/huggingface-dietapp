@@ -42,7 +42,32 @@ set SECRET_KEY=change-this-secret-key-in-production-%RANDOM%-%RANDOM%
 echo.
 echo 🔐 Login to Azure
 echo ==================
-call az login
+echo Checking Azure login status...
+call az account show >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo You are not logged in to Azure. Logging in now...
+    call az login
+) else (
+    echo You are already logged in to Azure.
+)
+
+echo.
+echo 🔍 Verifying Azure Subscription
+echo ================================
+echo Current subscription:
+call az account show --query "name" -o tsv
+echo.
+echo Available subscriptions:
+call az account list --query "[].{Name:name, SubscriptionId:id, IsDefault:isDefault}" -o table
+echo.
+set /p CONFIRM_SUB="Do you want to use the current subscription? (y/n): "
+if /i "%CONFIRM_SUB%" NEQ "y" (
+    echo.
+    echo Please set your desired subscription using:
+    echo az account set --subscription "your-subscription-id"
+    pause
+    exit /b 1
+)
 
 echo.
 echo 🏗️  Creating Azure Resources
@@ -51,14 +76,29 @@ echo ============================
 REM Create resource group
 echo Creating resource group: %RESOURCE_GROUP%
 call az group create --name %RESOURCE_GROUP% --location "%LOCATION%"
+if %ERRORLEVEL% NEQ 0 (
+    echo ❌ Failed to create resource group
+    pause
+    exit /b 1
+)
 
 REM Create App Service plan (Free tier)
 echo Creating App Service plan: %APP_SERVICE_PLAN%
 call az appservice plan create --name %APP_SERVICE_PLAN% --resource-group %RESOURCE_GROUP% --sku F1 --is-linux
+if %ERRORLEVEL% NEQ 0 (
+    echo ❌ Failed to create App Service plan
+    pause
+    exit /b 1
+)
 
 REM Create Web App
 echo Creating Web App: %WEBAPP_NAME%
 call az webapp create --resource-group %RESOURCE_GROUP% --plan %APP_SERVICE_PLAN% --name %WEBAPP_NAME% --runtime "PYTHON|3.11"
+if %ERRORLEVEL% NEQ 0 (
+    echo ❌ Failed to create Web App
+    pause
+    exit /b 1
+)
 
 echo.
 echo ⚙️  Configuring Environment Variables
