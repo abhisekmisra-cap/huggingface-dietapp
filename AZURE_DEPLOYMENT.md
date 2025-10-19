@@ -45,7 +45,7 @@ This guide will help you deploy the Diet Plan Generator to Azure Web App.
      - Resource Group: `diet-plan-rg`
      - Name: `your-diet-plan-app` (must be globally unique)
      - Publish: `Code`
-     - Runtime stack: `Python 3.11`
+     - Runtime stack: `Python 3.8`
      - Operating System: `Linux`
      - Region: Same as resource group
    - **App Service Plan:**
@@ -66,7 +66,7 @@ az group create --name diet-plan-rg --location "East US"
 az appservice plan create --name diet-plan-plan --resource-group diet-plan-rg --sku F1 --is-linux
 
 # Create Web App
-az webapp create --resource-group diet-plan-rg --plan diet-plan-plan --name your-diet-plan-app --runtime "PYTHON|3.11"
+az webapp create --resource-group diet-plan-rg --plan diet-plan-plan --name your-diet-plan-app --runtime "PYTHON|3.8"
 ```
 
 ## ⚙️ Step 3: Configure Environment Variables

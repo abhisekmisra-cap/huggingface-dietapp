@@ -57,7 +57,7 @@ az appservice plan create --name $APP_SERVICE_PLAN --resource-group $RESOURCE_GR
 
 # Create Web App
 echo "Creating Web App: $WEBAPP_NAME"
-az webapp create --resource-group $RESOURCE_GROUP --plan $APP_SERVICE_PLAN --name $WEBAPP_NAME --runtime "PYTHON|3.11"
+az webapp create --resource-group $RESOURCE_GROUP --plan $APP_SERVICE_PLAN --name $WEBAPP_NAME --runtime "PYTHON|3.8"
 
 echo ""
 echo "⚙️  Configuring Environment Variables"

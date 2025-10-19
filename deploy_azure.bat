@@ -93,7 +93,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Create Web App
 echo Creating Web App: %WEBAPP_NAME%
-call az webapp create --resource-group %RESOURCE_GROUP% --plan %APP_SERVICE_PLAN% --name %WEBAPP_NAME% --runtime "PYTHON|3.11"
+call az webapp create --resource-group %RESOURCE_GROUP% --plan %APP_SERVICE_PLAN% --name %WEBAPP_NAME% --runtime "PYTHON|3.8"
 if %ERRORLEVEL% NEQ 0 (
     echo ❌ Failed to create Web App
     pause

@@ -114,7 +114,7 @@ echo Finished successfully.
 
 :SelectPythonVersion
 
-SET PYTHON_RUNTIME=python-3.11
+SET PYTHON_RUNTIME=python-3.8
 SET PYTHON_VER=%PYTHON_RUNTIME:python-=%
 SET PYTHON_EXE=%SYSTEMDRIVE%\python%PYTHON_VER:.=%\python.exe
 

@@ -49,7 +49,8 @@ call az appservice plan create --name %APP_SERVICE_PLAN% --resource-group %RESOU
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo Step 3: Creating Web App...
-call az webapp create --resource-group %RESOURCE_GROUP% --plan %APP_SERVICE_PLAN% --name %WEBAPP_NAME% --runtime "PYTHON|3.11"
+set RUNTIME=PYTHON^|3.8
+call az webapp create --resource-group %RESOURCE_GROUP% --plan %APP_SERVICE_PLAN% --name %WEBAPP_NAME% --runtime "%RUNTIME%"
 if %ERRORLEVEL% NEQ 0 goto :error
 
 echo.
