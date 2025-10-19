@@ -31,6 +31,10 @@ DIET_CONFIG = {
     "food_habits": [
         "vegetarian", "non-vegetarian", "both"
     ],
+    "vegetarian_proteins": [
+        "lentils", "chickpeas", "black beans", "kidney beans", "tofu", "tempeh", 
+        "paneer", "cottage cheese", "eggs", "quinoa", "nuts", "seeds", "yogurt"
+    ],
     "dietary_restrictions": [
         "vegan", "gluten-free", "dairy-free", 
         "keto", "low-carb", "low-fat", "diabetic", "heart-healthy"
@@ -63,13 +67,21 @@ PROMPT_TEMPLATES = {
     - Food Habit: {food_habit}
     - Health Conditions: {diseases}
     
-    Please provide a detailed daily diet plan including:
-    1. Breakfast, Lunch, and Dinner suggestions
-    2. Healthy snack options
-    3. Portion recommendations
-    4. Nutritional considerations for the health conditions
-    5. Cultural food preferences based on nationality
-    6. Food recommendations strictly following the {food_habit} diet preference
+    CRITICAL DIETARY RESTRICTIONS - MUST FOLLOW:
+    - If Food Habit is "vegetarian": ABSOLUTELY NO meat, chicken, fish, seafood, beef, pork, lamb, turkey, or any animal flesh
+    - Vegetarian foods only: vegetables, fruits, grains, dairy, eggs, legumes, nuts, seeds, tofu, paneer
+    - If Food Habit is "non-vegetarian": Include meat, poultry, fish and plant foods
+    - If Food Habit is "both": Mix of vegetarian and non-vegetarian options
+    
+    Please create a {food_habit} diet plan with:
+    1. Breakfast (must be {food_habit})
+    2. Lunch (must be {food_habit})
+    3. Dinner (must be {food_habit})
+    4. 2 Snacks (must be {food_habit})
+    5. Portion sizes and nutritional notes
+    6. Consider health conditions: {diseases}
+    
+    Remember: This person is {food_habit} - do not suggest any foods that violate this preference.
     
     Diet Plan:
     """,

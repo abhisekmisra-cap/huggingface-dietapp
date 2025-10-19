@@ -130,7 +130,7 @@ def generate_plan():
             weight=data['weight'],
             nationality=data['nationality'],
             diseases=data['diseases'],
-            food_habit=data.get('food_habit', 'both')
+            food_habit=data.get('food_habit', 'both')  # Default to 'both' if not specified
         )
         
         # Initialize generator

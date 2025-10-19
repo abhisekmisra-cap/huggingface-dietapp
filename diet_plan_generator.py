@@ -186,10 +186,59 @@ class DietPlanGenerator:
         if considerations["special_needs"]:
             prompt += f"\nSpecial dietary requirements: {', '.join(considerations['special_needs'])}"
         
+        # Add explicit food habit restrictions
+        if user_profile.food_habit == "vegetarian":
+            prompt += f"\nIMPORTANT: This person is VEGETARIAN. Do NOT include any meat, chicken, fish, seafood, or any animal flesh in the diet plan."
+            prompt += f"\nAcceptable proteins: lentils, beans, tofu, paneer, cheese, eggs, nuts, seeds, dairy products."
+        elif user_profile.food_habit == "non-vegetarian":
+            prompt += f"\nThis person follows a non-vegetarian diet. Include both plant-based and animal-based protein sources."
+        elif user_profile.food_habit == "both":
+            prompt += f"\nThis person is flexible with both vegetarian and non-vegetarian options. Provide a balanced mix."
+        
         prompt += f"\nAge category: {considerations['age_group']}"
         prompt += f"\nEstimated BMI: {considerations['bmi']}"
         
         return prompt
+    
+    def _filter_non_vegetarian_content(self, diet_plan: str, food_habit: str) -> str:
+        """
+        Filter out non-vegetarian content if user selected vegetarian
+        """
+        if food_habit != "vegetarian":
+            return diet_plan
+        
+        # Common non-vegetarian items to filter out
+        non_veg_items = [
+            'chicken', 'beef', 'pork', 'lamb', 'mutton', 'fish', 'salmon', 'tuna', 
+            'shrimp', 'prawns', 'crab', 'lobster', 'turkey', 'duck', 'meat', 
+            'seafood', 'bacon', 'ham', 'sausage', 'pepperoni', 'steak'
+        ]
+        
+        # Replace non-vegetarian items with vegetarian alternatives
+        vegetarian_replacements = {
+            'chicken': 'paneer',
+            'beef': 'tofu',
+            'pork': 'tempeh',
+            'lamb': 'mushrooms',
+            'mutton': 'lentils',
+            'fish': 'tofu',
+            'salmon': 'nuts',
+            'tuna': 'chickpeas',
+            'shrimp': 'cauliflower',
+            'prawns': 'broccoli',
+            'turkey': 'beans',
+            'meat': 'legumes',
+            'seafood': 'vegetables'
+        }
+        
+        filtered_plan = diet_plan
+        for non_veg_item, veg_replacement in vegetarian_replacements.items():
+            # Case-insensitive replacement
+            import re
+            pattern = re.compile(re.escape(non_veg_item), re.IGNORECASE)
+            filtered_plan = pattern.sub(veg_replacement, filtered_plan)
+        
+        return filtered_plan
     
     def generate_diet_plan(self, user_profile: UserProfile) -> str:
         """
@@ -213,6 +262,9 @@ class DietPlanGenerator:
             
             # Clean up the output
             diet_plan = self._clean_generated_text(generated_text, prompt)
+            
+            # Filter non-vegetarian content if user is vegetarian
+            diet_plan = self._filter_non_vegetarian_content(diet_plan, user_profile.food_habit)
             
             return diet_plan
             
