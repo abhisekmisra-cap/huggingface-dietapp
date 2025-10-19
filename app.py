@@ -9,6 +9,10 @@ from wtforms import IntegerField, FloatField, SelectField, SelectMultipleField, 
 from wtforms.validators import DataRequired, NumberRange, Length
 from wtforms.widgets import CheckboxInput, ListWidget
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -52,6 +56,14 @@ class DietPlanForm(FlaskForm):
         ]
     )
     
+    height = FloatField(
+        'Height (inches)', 
+        validators=[
+            DataRequired(), 
+            NumberRange(min=36, max=96, message="Height must be between 36 and 96 inches (3-8 feet)")
+        ]
+    )
+    
     nationality = SelectField(
         'Nationality/Cuisine Preference',
         choices=[(nat, nat) for nat in VALIDATION_CONFIG["supported_nationalities"]], 
@@ -90,6 +102,7 @@ def index():
             profile = UserProfile(
                 age=form.age.data,
                 weight=form.weight.data,
+                height=form.height.data,
                 nationality=form.nationality.data,
                 diseases=diseases,
                 food_habit=form.food_habit.data
@@ -99,6 +112,7 @@ def index():
             session['profile_data'] = {
                 'age': form.age.data,
                 'weight': form.weight.data,
+                'height': form.height.data,
                 'nationality': form.nationality.data,
                 'diseases': diseases,
                 'food_habit': form.food_habit.data,
@@ -128,6 +142,7 @@ def generate_plan():
         profile = UserProfile(
             age=data['age'],
             weight=data['weight'],
+            height=data['height'],
             nationality=data['nationality'],
             diseases=data['diseases'],
             food_habit=data.get('food_habit', 'both')  # Default to 'both' if not specified

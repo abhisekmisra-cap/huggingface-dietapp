@@ -50,6 +50,9 @@ Thumbs.db
 *.tmp
 *.temp
 *.log
+*.bak
+*.old
+*.backup
 *.zip
 *.tar.gz
 

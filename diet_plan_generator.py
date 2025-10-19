@@ -1,513 +1,428 @@
 """
-Diet Plan Generator using Hugging Face LLMs
+Diet Plan Generator using Hugging Face Inference API
+Clean API-only implementation with Meta Llama models
 """
 import os
-import sys
+import re
 from typing import Dict, Any, Optional
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-
-try:
-    import requests
-    import json
-    from huggingface_hub import InferenceClient
-except ImportError as e:
-    print(f"Error importing required libraries: {e}")
-    print("Please install required packages: pip install -r requirements.txt")
-    sys.exit(1)
+import requests
+import json
+from huggingface_hub import InferenceClient
 
 from config import MODEL_CONFIG, PROMPT_TEMPLATES
 from user_profile import UserProfile
 
 
 class DietPlanGenerator:
-    """
-    Main class for generating personalized diet plans using Hugging Face Inference API
-    """
+    """Main class for generating personalized diet plans using Hugging Face Inference API only"""
     
     def __init__(self, model_name: Optional[str] = None, api_token: Optional[str] = None):
-        """
-        Initialize the diet plan generator using Hugging Face Inference API
-        
-        Args:
-            model_name (str, optional): Name of the Hugging Face model to use
-            api_token (str, optional): Hugging Face API token (optional for public models)
-        """
+        """Initialize the diet plan generator"""
         self.model_name = model_name or MODEL_CONFIG["model_name"]
         self.api_token = api_token or os.getenv("HUGGINGFACE_API_TOKEN")
-        self.client = None
-        self.api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+        
+        if not self.api_token:
+            raise Exception("Hugging Face API token is required.")
         
         print(f"Initializing Diet Plan Generator with model: {self.model_name}")
-        print(f"Using Hugging Face Inference API")
+        print("Using Hugging Face Inference API with InferenceClient...")
         
-        self._initialize_client()
+        # Initialize InferenceClient for better Llama support
+        self.client = InferenceClient(token=self.api_token)
+        
+        # Test API but don't fail initialization - we'll check on actual generation
+        test_result = self._test_api_connection()
+        if test_result:
+            print("✅ API connection successful!")
+        else:
+            print("⚠️  API test had issues, but will try during generation...")
     
-    def _initialize_client(self):
-        """Initialize the Hugging Face Inference Client"""
-        try:
-            # Use direct API calls which are more reliable
-            print("✓ Using direct API calls to Hugging Face Inference API")
-            if self.api_token:
-                print("✓ API token provided - ready for inference")
-                # Test the connection
-                self._test_api_connection()
-            else:
-                print("❌ API token is required for Hugging Face Inference API")
-                print("💡 Get your free token at: https://huggingface.co/settings/tokens")
-                print("💡 Set environment variable: HUGGINGFACE_API_TOKEN=your_token_here")
-                print("💡 Or use --token your_token_here in command line")
-            
-            self.client = None  # Force direct API calls
-            
-        except Exception as e:
-            print(f"Error during initialization: {e}")
-            self.client = None
-    
-    def _test_api_connection(self):
-        """Test the API connection with a simple request"""
-        try:
-            print("🔍 Testing API connection...")
-            test_prompt = "Hello"
-            
-            # Using direct API call (more reliable)
-            result = self._direct_api_call(test_prompt, max_new_tokens=5)
-            if result and len(result.strip()) > 0:
-                print("✅ API connection successful!")
-            else:
-                print("⚠️  API returned empty result, but connection works")
-                
-        except Exception as e:
-            error_msg = str(e) if str(e) else "Unknown API error"
-            print(f"⚠️  API test failed: {error_msg}")
-            print("Will proceed anyway - API might be loading")
-            
-            # Additional debugging info
-            if "503" in error_msg or "loading" in error_msg.lower():
-                print("💡 Model is likely still loading on Hugging Face servers")
-            elif "401" in error_msg or "unauthorized" in error_msg.lower():
-                print("💡 Consider using an API token for better access")
-            elif "429" in error_msg or "rate" in error_msg.lower():
-                print("💡 Rate limited - try again in a few minutes or use API token")
-            elif "connection" in error_msg.lower():
-                print("💡 Check your internet connection")
-    
-    def _direct_api_call(self, prompt: str, max_new_tokens: int = None) -> str:
-        """Make direct API call to Hugging Face Inference API with retry logic"""
+    def _test_api_connection(self) -> bool:
+        """Test if the Hugging Face Inference API is accessible"""
         if not self.api_token:
-            raise Exception("Hugging Face API token is required. Please set HUGGINGFACE_API_TOKEN environment variable or provide token in constructor.")
+            return False
         
-        headers = {"Authorization": f"Bearer {self.api_token}"}
+        try:
+            api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+            headers = {"Authorization": f"Bearer {self.api_token}", "Content-Type": "application/json"}
+            payload = {"inputs": "Hello", "options": {"wait_for_model": True}}
+            
+            print(f"🔍 Testing API: {api_url}")
+            response = requests.post(api_url, headers=headers, json=payload, timeout=10)
+            
+            print(f"   Status: {response.status_code}")
+            if response.status_code == 404:
+                print(f"   ⚠️  Model not found or not accessible via Inference API")
+                print(f"   Response: {response.text[:200]}")
+                # 404 might mean the model exists but doesn't support Inference API
+                # Let's still try during actual generation
+                return False
+            elif response.status_code in [200, 400, 503]:
+                return True
+            elif response.status_code == 403:
+                print(f"   ⚠️  Access denied - Accept license at: https://huggingface.co/{self.model_name}")
+                return False
+            else:
+                print(f"   Response: {response.text[:200]}")
+                return False
+        except Exception as e:
+            print(f"   API test error: {e}")
+            return False
+    
+    def _call_api(self, prompt: str, max_new_tokens: int = None) -> str:
+        """Make API call to Hugging Face with retry logic"""
+        if not self.api_token:
+            raise Exception("API token required.")
         
+        # Try using InferenceClient first (better for Llama models)
+        if "llama" in self.model_name.lower():
+            return self._call_api_with_client(prompt, max_new_tokens)
+        
+        # Fallback to direct REST API for other models
+        api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+        headers = {"Authorization": f"Bearer {self.api_token}", "Content-Type": "application/json"}
         payload = {
             "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": max_new_tokens or MODEL_CONFIG["max_new_tokens"],
-                "temperature": MODEL_CONFIG["temperature"],
-                "top_p": MODEL_CONFIG["top_p"],
-                "do_sample": MODEL_CONFIG["do_sample"],
-                "return_full_text": False
-            }
+            "parameters": {"max_new_tokens": max_new_tokens or 600, "temperature": 0.7, "top_p": 0.9, "return_full_text": False},
+            "options": {"wait_for_model": True, "use_cache": False}
         }
         
-        # Retry logic
         for attempt in range(MODEL_CONFIG.get("retry_attempts", 3)):
             try:
-                response = requests.post(
-                    self.api_url, 
-                    headers=headers, 
-                    json=payload,
-                    timeout=MODEL_CONFIG.get("timeout_seconds", 30)
-                )
+                response = requests.post(api_url, headers=headers, json=payload, timeout=60)
+                
+                print(f"📡 API Response Status: {response.status_code}")
                 
                 if response.status_code == 200:
                     result = response.json()
                     if isinstance(result, list) and len(result) > 0:
                         return result[0].get("generated_text", "")
-                    else:
-                        return str(result)
-                        
+                    return str(result)
                 elif response.status_code == 503:
-                    # Model is loading, wait and retry
-                    print(f"⏳ Model is loading, retrying in {(attempt + 1) * 5} seconds...")
+                    print(f"⏳ Model loading, retrying in {(attempt + 1) * 5}s...")
                     import time
                     time.sleep((attempt + 1) * 5)
                     continue
-                    
+                elif response.status_code == 404:
+                    error_msg = f"❌ Model '{self.model_name}' not found or not available via Inference API.\n"
+                    error_msg += f"Response: {response.text[:300]}\n"
+                    error_msg += f"Please check:\n"
+                    error_msg += f"1. Model exists at https://huggingface.co/{self.model_name}\n"
+                    error_msg += f"2. You have accepted the model's license\n"
+                    error_msg += "3. The model supports Inference API (some models don't)"
+                    raise Exception(error_msg)
                 else:
-                    error_msg = f"API call failed: {response.status_code} - {response.text}"
-                    if attempt == MODEL_CONFIG.get("retry_attempts", 3) - 1:
+                    error_msg = f"API call failed: {response.status_code}\nResponse: {response.text[:300]}"
+                    if attempt == 2:
                         raise Exception(error_msg)
-                    else:
-                        print(f"⚠️  Attempt {attempt + 1} failed: {error_msg}")
-                        
+                    print(f"⚠️  Attempt {attempt + 1} failed, retrying...")
             except requests.exceptions.Timeout:
-                if attempt == MODEL_CONFIG.get("retry_attempts", 3) - 1:
+                if attempt == 2:
                     raise Exception("API call timed out")
-                else:
-                    print(f"⚠️  Attempt {attempt + 1} timed out, retrying...")
-                    
-            except requests.exceptions.RequestException as e:
-                if attempt == MODEL_CONFIG.get("retry_attempts", 3) - 1:
-                    raise Exception(f"Network error: {e}")
-                else:
-                    print(f"⚠️  Network error on attempt {attempt + 1}: {e}")
+                print(f"⏱️  Timeout on attempt {attempt + 1}, retrying...")
+            except Exception as e:
+                if attempt == 2:
+                    raise
+                print(f"❌ Error on attempt {attempt + 1}: {e}")
+                import time
+                time.sleep(2)
         
-        raise Exception("All retry attempts failed")
+        raise Exception("Failed after all retry attempts")
+    
+    def _call_api_with_client(self, prompt: str, max_new_tokens: int = None) -> str:
+        """Use InferenceClient for Llama models (better support)"""
+        print(f"🦙 Using InferenceClient for Llama model with chat_completion...")
+        
+        try:
+            # Llama models support 'conversational' task, so use chat_completion
+            # Parse the Llama-formatted prompt to extract system and user messages
+            messages = []
+            
+            # Check if prompt has Llama special tokens
+            if "<|start_header_id|>system<|end_header_id|>" in prompt:
+                # Extract system message
+                system_start = prompt.find("<|start_header_id|>system<|end_header_id|>")
+                system_end = prompt.find("<|eot_id|>", system_start)
+                if system_start != -1 and system_end != -1:
+                    system_content = prompt[system_start:system_end]
+                    system_content = system_content.replace("<|start_header_id|>system<|end_header_id|>", "").strip()
+                    messages.append({"role": "system", "content": system_content})
+                
+                # Extract user message
+                user_start = prompt.find("<|start_header_id|>user<|end_header_id|>")
+                user_end = prompt.find("<|eot_id|>", user_start)
+                if user_start != -1 and user_end != -1:
+                    user_content = prompt[user_start:user_end]
+                    user_content = user_content.replace("<|start_header_id|>user<|end_header_id|>", "").strip()
+                    messages.append({"role": "user", "content": user_content})
+            else:
+                # If no special tokens, treat entire prompt as user message
+                messages.append({"role": "user", "content": prompt})
+            
+            # Use chat_completion for conversational models
+            response = self.client.chat_completion(
+                messages=messages,
+                model=self.model_name,
+                max_tokens=max_new_tokens or 600,
+                temperature=0.7,
+                top_p=0.9,
+            )
+            
+            print(f"✅ InferenceClient chat_completion successful!")
+            
+            # Extract the generated text from the response
+            if hasattr(response, 'choices') and len(response.choices) > 0:
+                return response.choices[0].message.content
+            else:
+                return str(response)
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ InferenceClient error: {error_msg}")
+            
+            # Provide helpful error messages
+            if "404" in error_msg or "not found" in error_msg.lower():
+                raise Exception(
+                    f"Model '{self.model_name}' not accessible.\n"
+                    f"Please ensure:\n"
+                    f"1. You've accepted the license at https://huggingface.co/{self.model_name}\n"
+                    f"2. Your token has access to gated models\n"
+                    f"3. The model supports serverless inference\n"
+                    f"Original error: {error_msg}"
+                )
+            elif "403" in error_msg or "unauthorized" in error_msg.lower():
+                raise Exception(
+                    f"Access denied to '{self.model_name}'.\n"
+                    f"Please accept the model license at: https://huggingface.co/{self.model_name}\n"
+                    f"Original error: {error_msg}"
+                )
+            else:
+                raise
     
     def _create_diet_prompt(self, user_profile: UserProfile) -> str:
-        """
-        Create a detailed prompt for diet plan generation
+        """Create prompt for diet plan generation"""
+        # Make nationality/cuisine preference more prominent in system prompt
+        cuisine_type = user_profile.nationality if user_profile.nationality else "Indian"
         
-        Args:
-            user_profile (UserProfile): User's profile information
-            
-        Returns:
-            str: Formatted prompt for the model
-        """
-        # Get dietary considerations
-        considerations = user_profile.get_dietary_considerations()
+        # Calculate BMI for better personalization
+        height_in_meters = (user_profile.height * 0.0254)  # Convert inches to meters
+        bmi = user_profile.weight / (height_in_meters ** 2)
+        bmi_category = "Normal"
+        if bmi < 18.5:
+            bmi_category = "Underweight"
+        elif 18.5 <= bmi < 25:
+            bmi_category = "Normal"
+        elif 25 <= bmi < 30:
+            bmi_category = "Overweight"
+        else:
+            bmi_category = "Obese"
         
-        # Format diseases for better readability
-        diseases_str = ", ".join(user_profile.diseases)
-        if diseases_str == "none":
-            diseases_str = "No specific health conditions"
+        system_prompt = f"You are an expert nutritionist specializing in {cuisine_type} cuisine. Create personalized balanced diet plans with specific {cuisine_type} dish names and appropriate portions."
         
-        # Create dietary restrictions text based on food habit
-        if user_profile.food_habit == "vegetarian":
-            dietary_restrictions = """
-            - NO meat, chicken, fish, seafood, beef, pork, lamb, turkey, duck, eggs, or ANY animal products
-            - YES to: vegetables, fruits, grains, dairy, legumes, nuts, seeds, tofu, paneer
-            - NO eggs - strictly plant-based proteins only
-            - Protein sources: lentils, beans, chickpeas, tofu, paneer, nuts, dairy products
-            """
-        elif user_profile.food_habit == "non-vegetarian":
-            dietary_restrictions = """
-            - Include meat, chicken, fish, seafood, poultry, and all animal-based foods
-            - ALSO include: vegetables, fruits, grains, dairy, EGGS, legumes, nuts, seeds
-            - EGGS are allowed and recommended for protein
-            - Mix of animal proteins (meat, fish, poultry, eggs) and plant proteins
-            """
-        else:  # both
-            dietary_restrictions = """
-            - Mix of vegetarian and non-vegetarian options
-            - EGGS are only included in non-vegetarian meals
-            - Vegetarian options: no eggs, plant-based proteins only
-            """
+        user_prompt = f"""Create a daily {cuisine_type} diet plan for a person with these details:
+- Age: {user_profile.age} years
+- Weight: {user_profile.weight} kg
+- Height: {user_profile.height} inches ({height_in_meters:.2f} meters)
+- BMI: {bmi:.1f} ({bmi_category})
+- Nationality/Cuisine: {cuisine_type}
+- Food Preference: {user_profile.food_habit}
+- Health Conditions: {user_profile.diseases}
+
+IMPORTANT: Use ONLY traditional {cuisine_type} dishes. Do not mix cuisines.
+
+Provide a structured meal plan with:
+
+BREAKFAST: 2-3 {cuisine_type} dishes with portion sizes
+LUNCH: 3-4 {cuisine_type} dishes with portion sizes  
+DINNER: 2-3 {cuisine_type} dishes with portion sizes
+SNACKS: Mid-morning and evening {cuisine_type} snacks
+
+Example {cuisine_type} dishes you could include:
+- For Indian: Masala Dosa, Paneer Tikka, Dal Tadka, Roti, Idli, Sambar, etc.
+- Use authentic {cuisine_type} food items only."""
         
-        # Create detailed prompt
-        prompt = PROMPT_TEMPLATES["diet_plan_prompt"].format(
-            age=user_profile.age,
-            weight=user_profile.weight,
-            nationality=user_profile.nationality,
-            food_habit=user_profile.food_habit.upper(),
-            diseases=diseases_str,
-            dietary_restrictions=dietary_restrictions
-        )
-        
-        # Add additional context
-        if considerations["special_needs"]:
-            prompt += f"\nSpecial requirements: {', '.join(considerations['special_needs'])}"
-        
-        prompt += f"\nAge group: {considerations['age_group']}, BMI: {considerations['bmi']}"
-        
+        if "llama" in self.model_name.lower():
+            prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{user_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        else:
+            prompt = f"{system_prompt}\n\n{user_prompt}\n\nDiet Plan:\n"
         return prompt
     
     def _filter_non_vegetarian_content(self, diet_plan: str, food_habit: str) -> str:
-        """
-        Filter out non-vegetarian content if user selected vegetarian
-        """
-        if food_habit != "vegetarian":
+        """Filter non-veg content for vegetarians"""
+        if food_habit.lower() != "vegetarian":
             return diet_plan
         
-        import re
+        non_veg_items = {'chicken', 'fish', 'meat', 'egg', 'mutton', 'lamb', 'beef', 'pork', 'prawn', 'shrimp', 'crab', 'turkey', 'duck', 'salmon', 'tuna'}
+        lines = diet_plan.split('\n')
+        filtered_lines = [line for line in lines if not any(item in line.lower() for item in non_veg_items)]
+        return '\n'.join(filtered_lines)
+    
+    def _format_output_as_table(self, generated_text: str, user_profile: UserProfile) -> str:
+        """Format LLM output into bulleted sections"""
+        lines = generated_text.split('\n')
+        meals = {'breakfast': [], 'lunch': [], 'dinner': [], 'snacks': []}
+        current_meal = None
         
-        # Comprehensive list of non-vegetarian items to replace
-        vegetarian_replacements = {
-            # Eggs (now considered non-vegetarian)
-            'eggs': 'tofu',
-            'egg': 'chickpea flour',
-            'boiled eggs': 'boiled potatoes',
-            'scrambled eggs': 'scrambled tofu',
-            'egg curry': 'paneer curry',
-            'omelet': 'besan chilla',
-            'fried egg': 'fried tofu',
+        for line in lines:
+            line = line.strip()
+            if not line or len(line) < 2:
+                continue
+            line_lower = line.lower()
             
-            # Poultry
-            'chicken': 'paneer',
-            'chicken breast': 'tofu steaks',
-            'chicken curry': 'paneer curry',
-            'chicken tikka': 'paneer tikka',
-            'roasted chicken': 'roasted cauliflower',
-            'grilled chicken': 'grilled paneer',
-            'turkey': 'tempeh',
-            'duck': 'mushrooms',
+            if 'breakfast' in line_lower:
+                current_meal = 'breakfast'
+                continue
+            elif 'lunch' in line_lower:
+                current_meal = 'lunch'
+                continue
+            elif 'dinner' in line_lower:
+                current_meal = 'dinner'
+                continue
+            elif 'snack' in line_lower:
+                current_meal = 'snacks'
+                continue
             
-            # Red meat
-            'beef': 'tofu',
-            'beef curry': 'mushroom curry',
-            'pork': 'jackfruit',
-            'lamb': 'lentils',
-            'mutton': 'chickpeas',
-            'goat': 'black beans',
-            'steak': 'grilled portobello',
-            'bacon': 'coconut bacon',
-            'ham': 'seitan',
-            'sausage': 'vegetarian sausage',
-            'pepperoni': 'spiced tempeh',
-            
-            # Seafood
-            'fish': 'tofu',
-            'fish curry': 'vegetable curry',
-            'salmon': 'marinated tofu',
-            'tuna': 'chickpea salad',
-            'cod': 'cauliflower',
-            'shrimp': 'mushrooms',
-            'prawns': 'bell peppers',
-            'crab': 'jackfruit',
-            'lobster': 'king oyster mushrooms',
-            'seafood': 'mixed vegetables',
-            
-            # Generic terms
-            'meat': 'plant protein',
-            'non-veg': 'vegetarian',
-            'animal protein': 'plant protein'
-        }
+            if current_meal:
+                clean_line = re.sub(r'^\d+[\.)]\s*', '', line).lstrip('-*• ').strip()
+                if clean_line and len(clean_line) > 3:
+                    meals[current_meal].append(clean_line)
         
-        filtered_plan = diet_plan
+        # FALLBACK: If parsing failed to extract meals, use raw text and distribute items
+        if not any(meals.values()):
+            all_lines = [l.strip() for l in generated_text.split('\n') if l.strip()]
+            for i, line in enumerate(all_lines[:12]):
+                clean = re.sub(r'^\d+[\.)]\s*', '', line).lstrip('-*• ').strip()
+                if clean and len(clean) > 3:
+                    if i < 3:
+                        meals['breakfast'].append(clean)
+                    elif i < 6:
+                        meals['lunch'].append(clean)
+                    elif i < 9:
+                        meals['dinner'].append(clean)
+                    else:
+                        meals['snacks'].append(clean)
         
-        # FIRST: Handle complex phrases and parenthetical expressions (before individual word replacements)
-        complex_patterns = [
-            # Parenthetical lists containing any non-veg items - replace entire list
-            (r'lean protein \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'lean protein (tofu, legumes, paneer)'),
-            (r'protein sources? \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'protein sources (tofu, legumes, paneer, nuts)'),
-            (r'protein options? \([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', 'protein options (tofu, legumes, paneer, nuts)'),
-            (r'\([^)]*(?:chicken|fish|meat|beef|pork|lamb|eggs?)[^)]*\)', '(tofu, legumes, paneer)'),
-            
-            # Common problematic phrases
-            (r'chicken,?\s+fish,?\s+(?:tofu|legumes|or\s+\w+)', 'tofu, legumes, paneer'),
-            (r'fish,?\s+chicken,?\s+(?:tofu|legumes|or\s+\w+)', 'tofu, legumes, paneer'),
-            (r'(?:chicken|fish|meat|eggs?),?\s+(?:chicken|fish|meat|eggs?),?\s+(?:tofu|legumes)', 'tofu, legumes, paneer'),
-        ]
+        # Format as bulleted sections
+        # FALLBACK: Show default message if no items parsed
+        breakfast_list = '\n'.join([f"   • {item}" for item in meals['breakfast']]) if meals['breakfast'] else '   • [No specific items - please try again]'
+        lunch_list = '\n'.join([f"   • {item}" for item in meals['lunch']]) if meals['lunch'] else '   • [No specific items - please try again]'
+        dinner_list = '\n'.join([f"   • {item}" for item in meals['dinner']]) if meals['dinner'] else '   • [No specific items - please try again]'
+        snacks_list = '\n'.join([f"   • {item}" for item in meals['snacks']]) if meals['snacks'] else '   • Fresh fruits, nuts, or healthy snacks (fallback)'
         
-        for pattern, replacement in complex_patterns:
-            filtered_plan = re.sub(pattern, replacement, filtered_plan, flags=re.IGNORECASE)
+        # Calculate BMI for display
+        height_in_meters = user_profile.height * 0.0254
+        bmi = user_profile.weight / (height_in_meters ** 2)
         
-        # SECOND: Apply individual word replacements with word boundaries
-        for non_veg_item, veg_replacement in vegetarian_replacements.items():
-            # Use word boundaries for better matching
-            pattern = re.compile(r'\b' + re.escape(non_veg_item) + r'\b', re.IGNORECASE)
-            filtered_plan = pattern.sub(veg_replacement, filtered_plan)
+        # Determine BMI category
+        if bmi < 18.5:
+            bmi_status = "Underweight ⚠️"
+        elif 18.5 <= bmi < 25:
+            bmi_status = "Normal ✅"
+        elif 25 <= bmi < 30:
+            bmi_status = "Overweight ⚠️"
+        else:
+            bmi_status = "Obese ⚠️"
         
-        # Final cleanup - remove any remaining references that might have been missed
-        final_cleanup = [
-            (r'\b(?:chicken|fish|meat|beef|pork|lamb|mutton|turkey|duck)\b', 'tofu'),
-            (r'\beggs?\b', 'legumes'),
-            (r'\bseafood\b', 'vegetables'),
-        ]
-        
-        for pattern, replacement in final_cleanup:
-            filtered_plan = re.sub(pattern, replacement, filtered_plan, flags=re.IGNORECASE)
-        
-        # Add a note if any replacements were made
-        if filtered_plan != diet_plan:
-            filtered_plan += "\n\nNote: This diet plan has been customized for vegetarian preferences."
-        
-        return filtered_plan
+        output = f"""
+
+🍽️  PERSONALIZED DIET PLAN (AI Generated)
+
+
+👤 PROFILE SUMMARY
+
+   📊 Physical Stats:
+      • Age: {user_profile.age} years
+      • Weight: {user_profile.weight} kg
+      • Height: {user_profile.height} inches ({height_in_meters:.2f} m)
+      • BMI: {bmi:.1f} ({bmi_status})
+   
+   🌍 Dietary Preferences:
+      • Cuisine Type: {user_profile.nationality}
+      • Food Habit: {user_profile.food_habit.title()}
+   
+   🏥 Health Information:
+      • Health Conditions: {', '.join(user_profile.diseases) if user_profile.diseases else 'None'}
+
+
+🎯 ADDITIONAL TIPS FOR SUCCESS
+
+   • Meal Prep: Prepare meals in advance to stay consistent
+   • Read Labels: Check nutrition facts and ingredient lists
+   • Mindful Eating: Eat slowly and listen to your body's hunger cues
+   • Track Progress: Keep a food diary or use a nutrition app
+   • Stay Consistent: Small daily changes lead to big results
+   • Avoid Skipping Meals: Regular eating prevents overeating later
+   • Include Variety: Rotate different foods to get diverse nutrients
+   • Plan Ahead: Have healthy snacks ready to avoid unhealthy choices
+
+
+📋 DAILY MEAL PLAN
+
+🌅 BREAKFAST (Morning Meal)
+{breakfast_list}
+
+🌞 LUNCH (Afternoon Meal)
+{lunch_list}
+
+🌙 DINNER (Evening Meal)
+{dinner_list}
+
+🍎 SNACKS (Between Meals)
+{snacks_list}
+
+
+💧 HYDRATION & WELLNESS TIPS
+
+💧 Hydration Guidelines:
+   • Drink 8-10 glasses (2-3 liters) of water throughout the day
+   • Start your morning with warm water and lemon
+   • Carry a water bottle to track your intake
+
+💡 General Wellness Tips:
+   • Eat at regular intervals (every 3-4 hours)
+   • Practice portion control - use smaller plates
+   • Engage in at least 30 minutes of physical activity daily
+   • Get 7-8 hours of quality sleep
+   • Manage stress through meditation or yoga
+
+
+⚠️  DISCLAIMER
+
+   This is an AI-generated dietary guide based on the information provided.
+   For specific medical conditions or personalized nutrition advice, please
+   consult a registered dietitian or healthcare provider.
+
+"""
+        return output
     
     def generate_diet_plan(self, user_profile: UserProfile) -> str:
-        """
-        Generate a personalized diet plan for the user using Hugging Face Inference API
-        
-        Args:
-            user_profile (UserProfile): User's profile information
-            
-        Returns:
-            str: Generated diet plan
-        """
-        print("Generating personalized diet plan using Hugging Face API...")
-        
-        # Create the prompt
+        """Generate personalized diet plan using API"""
         prompt = self._create_diet_prompt(user_profile)
         
         try:
-            # Use direct API call (more reliable than InferenceClient)
-            print("🔄 Using Hugging Face API...")
-            generated_text = self._direct_api_call(prompt)
+            print("Generating diet plan with Hugging Face API...")
+            generated_text = self._call_api(prompt, max_new_tokens=600)
             
-            # Clean up the output
-            diet_plan = self._clean_generated_text(generated_text, prompt)
-            
-            # Filter non-vegetarian content if user is vegetarian
-            diet_plan = self._filter_non_vegetarian_content(diet_plan, user_profile.food_habit)
-            
-            return diet_plan
-            
+            if generated_text and len(generated_text.strip()) > 50:
+                filtered_text = self._filter_non_vegetarian_content(generated_text, user_profile.food_habit)
+                diet_plan = self._format_output_as_table(filtered_text, user_profile)
+                print("Diet plan generated successfully!")
+                return diet_plan
+            else:
+                raise Exception("API generated insufficient content. Please try again.")
         except Exception as e:
-            error_msg = str(e) if str(e) else "Unknown API error"
-            print(f"Error generating diet plan via API: {error_msg}")
-            
-            # Provide helpful error context
-            if "503" in error_msg:
-                print("💡 The model is loading on Hugging Face servers. This is normal for the first request.")
-            elif "401" in error_msg:
-                print("💡 Authentication error. Consider using an API token.")
-            elif "429" in error_msg:
-                print("💡 Rate limited. Try again in a few minutes or use an API token.")
-            elif "connection" in error_msg.lower():
-                print("💡 Check your internet connection.")
-            
-            print("Using local fallback plan...")
-            return self._generate_fallback_diet_plan(user_profile)
-    
-    def _clean_generated_text(self, generated_text: str, original_prompt: str) -> str:
-        """
-        Clean and format the generated text
-        
-        Args:
-            generated_text (str): Raw generated text from model
-            original_prompt (str): Original prompt used
-            
-        Returns:
-            str: Cleaned and formatted text
-        """
-        # Remove the original prompt if it appears in the output
-        if original_prompt in generated_text:
-            generated_text = generated_text.replace(original_prompt, "").strip()
-        
-        # Remove any incomplete sentences at the end
-        sentences = generated_text.split('.')
-        if len(sentences) > 1 and len(sentences[-1].strip()) < 20:
-            generated_text = '.'.join(sentences[:-1]) + '.'
-        
-        # Basic formatting
-        generated_text = generated_text.strip()
-        
-        return generated_text
-    
-    def _generate_fallback_diet_plan(self, user_profile: UserProfile) -> str:
-        """
-        Generate a basic diet plan if the model fails
-        
-        Args:
-            user_profile (UserProfile): User's profile information
-            
-        Returns:
-            str: Basic diet plan template
-        """
-        considerations = user_profile.get_dietary_considerations()
-        
-        fallback_plan = f"""
-PERSONALIZED DIET PLAN
-
-Profile Summary:
-- Age: {user_profile.age} years ({considerations['age_group']})
-- Weight: {user_profile.weight} kg (BMI: {considerations['bmi']})
-- Cuisine Preference: {user_profile.nationality}
-- Health Conditions: {', '.join(user_profile.diseases)}
-
-DAILY MEAL PLAN:
-
-BREAKFAST:
-- Whole grain cereal with low-fat milk or plant-based alternative
-- Fresh fruit (banana, berries, or seasonal fruit)
-- Green tea or herbal tea
-
-LUNCH:
-- Lean protein (chicken, fish, tofu, or legumes)
-- Complex carbohydrates (brown rice, quinoa, or whole wheat bread)
-- Mixed vegetables (steamed or lightly sautéed)
-- Small portion of healthy fats (nuts, avocado, or olive oil)
-
-DINNER:
-- Light protein source
-- Large portion of vegetables
-- Small portion of complex carbs
-- Herbal tea
-
-SNACKS:
-- Fresh fruits
-- Nuts (small portion)
-- Yogurt or plant-based alternative
-
-SPECIAL CONSIDERATIONS:
-"""
-        
-        # Add specific recommendations based on health conditions
-        for disease in user_profile.diseases:
-            if "diabetes" in disease.lower():
-                fallback_plan += "- Monitor carbohydrate intake and choose low glycemic index foods\n"
-            elif "hypertension" in disease.lower():
-                fallback_plan += "- Limit sodium intake and include potassium-rich foods\n"
-            elif "cholesterol" in disease.lower():
-                fallback_plan += "- Limit saturated fats and choose lean proteins\n"
-                fallback_plan += "- Include high-fiber foods like oats, beans, and vegetables\n"
-                fallback_plan += "- Add omega-3 rich foods like fish, walnuts, and flaxseeds\n"
-            elif "heart" in disease.lower():
-                fallback_plan += "- Include omega-3 rich foods and limit saturated fats\n"
-        
-        fallback_plan += "\nHYDRATION:\n- Drink 8-10 glasses of water daily\n- Limit sugary drinks and alcohol"
-        fallback_plan += "\n\nNote: This is a general plan. Please consult with a healthcare provider for personalized medical advice."
-        
-        return fallback_plan
+            print(f"API generation failed: {e}")
+            raise Exception(f"Failed to generate diet plan: {e}")
     
     def save_diet_plan(self, diet_plan: str, user_profile: UserProfile, filename: Optional[str] = None):
-        """
-        Save the generated diet plan to a file
-        
-        Args:
-            diet_plan (str): Generated diet plan
-            user_profile (UserProfile): User's profile
-            filename (str, optional): Custom filename
-        """
+        """Save diet plan to file"""
         if filename is None:
-            filename = f"diet_plan_{user_profile.age}y_{user_profile.weight}kg.txt"
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"diet_plan_{user_profile.name}_{timestamp}.txt"
         
-        try:
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(f"=== PERSONALIZED DIET PLAN ===\n\n")
-                f.write(f"Generated for: {user_profile}\n")
-                f.write(f"Generated on: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Model used: {self.model_name}\n\n")
-                f.write("=" * 50 + "\n\n")
-                f.write(diet_plan)
-                f.write("\n\n" + "=" * 50)
-                f.write("\nDisclaimer: This diet plan is generated by AI and should not replace professional medical advice.")
-            
-            print(f"✓ Diet plan saved to: {filename}")
-            
-        except Exception as e:
-            print(f"Error saving diet plan: {e}")
-
-
-if __name__ == "__main__":
-    # Test the DietPlanGenerator
-    print("Testing Diet Plan Generator...")
-    
-    try:
-        # Create a test user profile
-        test_profile = UserProfile(
-            age=30,
-            weight=75.0,
-            nationality="Indian",
-            diseases=["diabetes", "hypertension"]
-        )
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(diet_plan)
         
-        # Initialize generator
-        generator = DietPlanGenerator()
-        
-        # Generate diet plan
-        diet_plan = generator.generate_diet_plan(test_profile)
-        
-        print("\n" + "="*60)
-        print("GENERATED DIET PLAN:")
-        print("="*60)
-        print(diet_plan)
-        
-        # Save the plan
-        generator.save_diet_plan(diet_plan, test_profile)
-        
-    except Exception as e:
-        print(f"Error during testing: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Diet plan saved to: {filename}")
+        return filename

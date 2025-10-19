@@ -19,7 +19,7 @@
                     {{ form.hidden_tag() }}
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="age" class="form-label fw-bold">Age</label>
                             {{ form.age(class="form-control", placeholder="Enter your age") }}
                             {% if form.age.errors %}
@@ -29,7 +29,7 @@
                             {% endif %}
                         </div>
                         
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="weight" class="form-label fw-bold">Weight (kg)</label>
                             {{ form.weight(class="form-control", placeholder="Enter your weight") }}
                             {% if form.weight.errors %}
@@ -37,6 +37,17 @@
                                     {% for error in form.weight.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="height" class="form-label fw-bold">Height (inches)</label>
+                            {{ form.height(class="form-control", placeholder="e.g., 65") }}
+                            {% if form.height.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.height.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">1 foot = 12 inches</small>
                         </div>
                     </div>
                     

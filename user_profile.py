@@ -10,19 +10,21 @@ class UserProfile:
     Handles user profile information including validation and formatting
     """
     
-    def __init__(self, age: int, weight: float, nationality: str, diseases: List[str], food_habit: str = "both"):
+    def __init__(self, age: int, weight: float, height: float, nationality: str, diseases: List[str], food_habit: str = "both"):
         """
         Initialize user profile with validation
         
         Args:
             age (int): User's age in years
             weight (float): User's weight in kg
+            height (float): User's height in inches
             nationality (str): User's nationality or cuisine preference
             diseases (List[str]): List of health conditions/diseases
             food_habit (str): Food habit preference (vegetarian, non-vegetarian, or both)
         """
         self.age = self._validate_age(age)
         self.weight = self._validate_weight(weight)
+        self.height = self._validate_height(height)
         self.nationality = self._validate_nationality(nationality)
         self.diseases = self._validate_diseases(diseases)
         self.food_habit = self._validate_food_habit(food_habit)
@@ -49,6 +51,18 @@ class UserProfile:
             raise ValueError(f"Weight must be between {min_weight} and {max_weight} kg")
         
         return weight
+    
+    def _validate_height(self, height: float) -> float:
+        """Validate height input (in inches)"""
+        if not isinstance(height, (int, float)):
+            raise ValueError("Height must be a number")
+        
+        height = float(height)
+        # Reasonable height range: 36-96 inches (3-8 feet)
+        if not (36 <= height <= 96):
+            raise ValueError("Height must be between 36 and 96 inches (3-8 feet)")
+        
+        return height
     
     def _validate_nationality(self, nationality: str) -> str:
         """Validate nationality input"""
@@ -230,19 +244,3 @@ def create_user_profile_interactive() -> UserProfile:
     except ValueError as e:
         print(f"Error creating profile: {e}")
         return create_user_profile_interactive()  # Retry
-
-
-if __name__ == "__main__":
-    # Test the UserProfile class
-    print("Testing UserProfile class...")
-    
-    # Test valid profile
-    try:
-        profile = UserProfile(30, 70.5, "Indian", ["diabetes", "hypertension"], "vegetarian")
-        print("✓ Valid profile created:", profile)
-        print("Profile dict:", profile.to_dict())
-    except Exception as e:
-        print("✗ Error:", e)
-    
-    # Test interactive creation
-    # profile = create_user_profile_interactive()

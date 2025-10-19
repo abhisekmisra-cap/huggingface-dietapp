@@ -2,17 +2,22 @@
 Configuration settings for the Diet Plan Generator
 """
 
-# Hugging Face API Configuration
+# Hugging Face Model Configuration for Local Inference
 MODEL_CONFIG = {
-    # Using models available via Hugging Face Inference API
-    "model_name": "gpt2",  # Reliable model that works well with Inference API
+    # Using Meta Llama 3.2 via Hugging Face Inference API
+    "model_name": "meta-llama/Llama-3.2-3B-Instruct",  # 3B params, instruction-tuned
     
-    # Other good API models you can try:
-    # "model_name": "microsoft/DialoGPT-medium",  # May have compatibility issues
-    # "model_name": "microsoft/DialoGPT-small",
-    # "model_name": "distilgpt2",  # Faster alternative
-    # "model_name": "EleutherAI/gpt-neo-1.3B",  # Larger model, requires token
-    # "model_name": "mistralai/Mistral-7B-Instruct-v0.1",  # Requires API token
+    # Alternative models if Llama doesn't work:
+    # "model_name": "meta-llama/Llama-3.2-1B-Instruct",  # Smaller Llama (1B)
+    # "model_name": "google/flan-t5-large",  # Reliable fallback (780M params)
+    # "model_name": "google/flan-t5-base",  # Smaller, faster (250M params)
+    
+    # Note: Meta Llama models require license acceptance at huggingface.co
+    # and may need special Inference API access
+    
+    # GPT-style models (less suitable for this task):
+    # "model_name": "distilgpt2",  # Small and fast (80MB), but not instruction-tuned
+    # "model_name": "openai-community/gpt2",  # Standard GPT-2 (500MB)
     
     "max_new_tokens": 300,
     "temperature": 0.7,
