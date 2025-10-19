@@ -143,8 +143,14 @@ HuggingFace/
 ├── config.py                 # Configuration settings
 ├── get_token.py              # Helper to get API token
 ├── requirements.txt          # Python dependencies
-├── start_web.bat             # Windows startup script
-├── start_web.sh              # Linux/Mac startup script
+├── startup.py                # Azure Web App startup script
+├── azure_config.py           # Azure-specific configuration
+├── start_web.bat             # Windows local startup
+├── start_web.sh              # Linux/Mac local startup
+├── deploy_azure.bat          # Windows Azure deployment
+├── deploy_azure.sh           # Linux/Mac Azure deployment
+├── deploy_simple.bat         # Simplified Azure deployment
+├── AZURE_DEPLOYMENT.md       # Azure deployment guide
 ├── templates/                # Web interface templates
 │   ├── base.html             # Base template with styling
 │   ├── index.html            # Main form page
@@ -261,11 +267,11 @@ See **[AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md)** for comprehensive deployment 
 - Monitor usage in Azure Portal
 - Free tier: 1GB storage, perfect for learning
 
-### 🔧 Files Created for Azure
-- `startup.py` - Azure startup script
-- `web.config` - IIS configuration  
-- `deploy.cmd` - Custom deployment script
-- `azure_config.py` - Azure-specific settings
+### 🔧 Azure Deployment Files
+- `startup.py` - Azure Web App startup script
+- `azure_config.py` - Azure-specific environment settings
+- `deploy_azure.bat/sh` - Complete deployment automation
+- `deploy_simple.bat` - Streamlined deployment script
 - `AZURE_DEPLOYMENT.md` - Comprehensive deployment guide
 
 ## 🔧 Troubleshooting
