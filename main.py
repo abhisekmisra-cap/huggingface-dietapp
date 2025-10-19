@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from user_profile import UserProfile, create_user_profile_interactive
 from diet_plan_generator import DietPlanGenerator
-from config import MODEL_CONFIG, VALIDATION_CONFIG
+from config import MODEL_CONFIG, VALIDATION_CONFIG, DIET_CONFIG
 
 
 def print_banner():
@@ -41,8 +41,12 @@ def print_supported_options():
     for nationality in VALIDATION_CONFIG["supported_nationalities"]:
         print(f"   • {nationality}")
     
-    print("\n🏥 Common Health Conditions:")
+    print("\n�️ Food Habit Options:")
     from config import DIET_CONFIG
+    for habit in DIET_CONFIG["food_habits"]:
+        print(f"   • {habit.title()}")
+    
+    print("\n🏥 Common Health Conditions:")
     for condition in DIET_CONFIG["common_diseases"]:
         print(f"   • {condition.title()}")
     
@@ -68,6 +72,12 @@ def create_custom_profile() -> Optional[UserProfile]:
         print(f"\nSupported nationalities: {', '.join(VALIDATION_CONFIG['supported_nationalities'][:5])}... (and more)")
         nationality = input("Nationality/Cuisine preference: ").strip()
         
+        # Food habit input
+        print(f"\nFood habit options: {', '.join(DIET_CONFIG['food_habits'])}")
+        food_habit = input("Food habit preference (vegetarian/non-vegetarian/both): ").strip()
+        if not food_habit:
+            food_habit = "both"  # Default to both
+        
         # Diseases input
         print("\nHealth conditions (separate multiple with commas, or 'none'):")
         diseases_input = input("Conditions: ").strip()
@@ -78,7 +88,7 @@ def create_custom_profile() -> Optional[UserProfile]:
             diseases = [d.strip() for d in diseases_input.split(',')]
         
         # Create profile
-        profile = UserProfile(age, weight, nationality, diseases)
+        profile = UserProfile(age, weight, nationality, diseases, food_habit)
         
         print(f"\n✅ Profile created successfully!")
         print(f"📋 {profile}")

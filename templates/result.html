@@ -11,6 +11,9 @@
             <div class="mb-2"><strong>Weight:</strong> {{ profile.weight }} kg</div>
             <div class="mb-2"><strong>BMI:</strong> {{ "%.1f"|format(profile.get_bmi()) }}</div>
             <div class="mb-2"><strong>Nationality:</strong> {{ profile.nationality }}</div>
+            <div class="mb-2"><strong>🍽️ Food Habit:</strong> 
+                <span class="badge bg-primary">{{ profile.food_habit.title() }}</span>
+            </div>
             <div class="mb-2">
                 <strong>Health Conditions:</strong><br>
                 {% if profile.diseases == ['none'] %}

@@ -51,6 +51,17 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="food_habit" class="form-label fw-bold">🍽️ Food Habit</label>
+                        {{ form.food_habit(class="form-select") }}
+                        {% if form.food_habit.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.food_habit.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="text-muted">Choose your food preference for personalized recommendations</small>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label class="form-label fw-bold">Health Conditions</label>
                         <div class="health-conditions">
                             <div class="row">

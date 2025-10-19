@@ -178,6 +178,7 @@ class DietPlanGenerator:
             age=user_profile.age,
             weight=user_profile.weight,
             nationality=user_profile.nationality,
+            food_habit=user_profile.food_habit,
             diseases=diseases_str
         )
         

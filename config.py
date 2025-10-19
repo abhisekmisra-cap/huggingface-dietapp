@@ -28,8 +28,11 @@ MODEL_CONFIG = {
 DIET_CONFIG = {
     "default_meals_per_day": 3,
     "include_snacks": True,
+    "food_habits": [
+        "vegetarian", "non-vegetarian", "both"
+    ],
     "dietary_restrictions": [
-        "vegetarian", "vegan", "gluten-free", "dairy-free", 
+        "vegan", "gluten-free", "dairy-free", 
         "keto", "low-carb", "low-fat", "diabetic", "heart-healthy"
     ],
     "common_diseases": [
@@ -57,6 +60,7 @@ PROMPT_TEMPLATES = {
     - Age: {age} years old
     - Weight: {weight} kg
     - Nationality/Cuisine Preference: {nationality}
+    - Food Habit: {food_habit}
     - Health Conditions: {diseases}
     
     Please provide a detailed daily diet plan including:
@@ -65,6 +69,7 @@ PROMPT_TEMPLATES = {
     3. Portion recommendations
     4. Nutritional considerations for the health conditions
     5. Cultural food preferences based on nationality
+    6. Food recommendations strictly following the {food_habit} diet preference
     
     Diet Plan:
     """,

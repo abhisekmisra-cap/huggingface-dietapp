@@ -58,6 +58,13 @@ class DietPlanForm(FlaskForm):
         validators=[DataRequired()]
     )
     
+    food_habit = SelectField(
+        'Food Habit',
+        choices=[(habit, habit.title()) for habit in DIET_CONFIG["food_habits"]],
+        validators=[DataRequired()],
+        default="both"
+    )
+    
     diseases = MultiCheckboxField(
         'Health Conditions',
         choices=[(disease, disease.title()) for disease in DIET_CONFIG["common_diseases"]],
@@ -84,7 +91,8 @@ def index():
                 age=form.age.data,
                 weight=form.weight.data,
                 nationality=form.nationality.data,
-                diseases=diseases
+                diseases=diseases,
+                food_habit=form.food_habit.data
             )
             
             # Store form data in session
@@ -93,6 +101,7 @@ def index():
                 'weight': form.weight.data,
                 'nationality': form.nationality.data,
                 'diseases': diseases,
+                'food_habit': form.food_habit.data,
                 'api_token': form.api_token.data
             }
             
@@ -120,7 +129,8 @@ def generate_plan():
             age=data['age'],
             weight=data['weight'],
             nationality=data['nationality'],
-            diseases=data['diseases']
+            diseases=data['diseases'],
+            food_habit=data.get('food_habit', 'both')
         )
         
         # Initialize generator

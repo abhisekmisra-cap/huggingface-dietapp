@@ -10,7 +10,7 @@ class UserProfile:
     Handles user profile information including validation and formatting
     """
     
-    def __init__(self, age: int, weight: float, nationality: str, diseases: List[str]):
+    def __init__(self, age: int, weight: float, nationality: str, diseases: List[str], food_habit: str = "both"):
         """
         Initialize user profile with validation
         
@@ -19,11 +19,13 @@ class UserProfile:
             weight (float): User's weight in kg
             nationality (str): User's nationality or cuisine preference
             diseases (List[str]): List of health conditions/diseases
+            food_habit (str): Food habit preference (vegetarian, non-vegetarian, or both)
         """
         self.age = self._validate_age(age)
         self.weight = self._validate_weight(weight)
         self.nationality = self._validate_nationality(nationality)
         self.diseases = self._validate_diseases(diseases)
+        self.food_habit = self._validate_food_habit(food_habit)
     
     def _validate_age(self, age: int) -> int:
         """Validate age input"""
@@ -93,6 +95,20 @@ class UserProfile:
         
         return validated_diseases
     
+    def _validate_food_habit(self, food_habit: str) -> str:
+        """Validate food habit input"""
+        if not isinstance(food_habit, str):
+            raise ValueError("Food habit must be a string")
+        
+        food_habit = food_habit.strip().lower()
+        supported_habits = [habit.lower() for habit in DIET_CONFIG["food_habits"]]
+        
+        if food_habit not in supported_habits:
+            print(f"Warning: '{food_habit}' not in supported food habits. Using 'both'")
+            food_habit = "both"
+        
+        return food_habit
+    
     def get_bmi(self) -> float:
         """Calculate BMI (requires height, but we'll estimate based on age for now)"""
         # This is a simplified BMI calculation
@@ -123,6 +139,7 @@ class UserProfile:
             "bmi": self.get_bmi(),
             "health_conditions": self.diseases,
             "cuisine_preference": self.nationality,
+            "food_habit": self.food_habit,
             "special_needs": []
         }
         
@@ -151,6 +168,7 @@ class UserProfile:
             "weight": self.weight,
             "nationality": self.nationality,
             "diseases": self.diseases,
+            "food_habit": self.food_habit,
             "bmi": self.get_bmi(),
             "age_category": self.get_age_category(),
             "dietary_considerations": self.get_dietary_considerations()
@@ -159,7 +177,7 @@ class UserProfile:
     def __str__(self) -> str:
         """String representation of user profile"""
         diseases_str = ", ".join(self.diseases) if self.diseases != ["none"] else "None"
-        return f"User Profile - Age: {self.age}, Weight: {self.weight}kg, Nationality: {self.nationality}, Health Conditions: {diseases_str}"
+        return f"User Profile - Age: {self.age}, Weight: {self.weight}kg, Nationality: {self.nationality}, Food Habit: {self.food_habit.title()}, Health Conditions: {diseases_str}"
 
 
 def create_user_profile_interactive() -> UserProfile:
@@ -188,6 +206,12 @@ def create_user_profile_interactive() -> UserProfile:
     print(f"\nSupported nationalities: {', '.join(VALIDATION_CONFIG['supported_nationalities'])}")
     nationality = input("Enter your nationality or cuisine preference: ").strip()
     
+    # Get food habit
+    print(f"\nFood habit options: {', '.join(DIET_CONFIG['food_habits'])}")
+    food_habit = input("Enter your food habit preference (vegetarian/non-vegetarian/both): ").strip()
+    if not food_habit:
+        food_habit = "both"  # Default to both if no input
+    
     # Get diseases
     print(f"\nCommon health conditions: {', '.join(DIET_CONFIG['common_diseases'])}")
     print("Enter your health conditions (separate multiple conditions with commas):")
@@ -199,7 +223,7 @@ def create_user_profile_interactive() -> UserProfile:
         diseases = [disease.strip() for disease in diseases_input.split(",")]
     
     try:
-        profile = UserProfile(age, weight, nationality, diseases)
+        profile = UserProfile(age, weight, nationality, diseases, food_habit)
         print(f"\n✓ Profile created successfully!")
         print(profile)
         return profile
@@ -214,7 +238,7 @@ if __name__ == "__main__":
     
     # Test valid profile
     try:
-        profile = UserProfile(30, 70.5, "Indian", ["diabetes", "hypertension"])
+        profile = UserProfile(30, 70.5, "Indian", ["diabetes", "hypertension"], "vegetarian")
         print("✓ Valid profile created:", profile)
         print("Profile dict:", profile.to_dict())
     except Exception as e:
