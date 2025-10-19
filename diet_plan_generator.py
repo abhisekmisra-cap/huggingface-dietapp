@@ -176,14 +176,24 @@ class DietPlanGenerator:
         # Create dietary restrictions text based on food habit
         if user_profile.food_habit == "vegetarian":
             dietary_restrictions = """
-            - NO meat, chicken, fish, seafood, beef, pork, lamb, turkey, duck, or ANY animal flesh
-            - YES to: vegetables, fruits, grains, dairy, eggs, legumes, nuts, seeds, tofu, paneer
-            - ONLY plant-based proteins: lentils, beans, chickpeas, tofu, paneer, nuts, eggs
+            - NO meat, chicken, fish, seafood, beef, pork, lamb, turkey, duck, eggs, or ANY animal products
+            - YES to: vegetables, fruits, grains, dairy, legumes, nuts, seeds, tofu, paneer
+            - NO eggs - strictly plant-based proteins only
+            - Protein sources: lentils, beans, chickpeas, tofu, paneer, nuts, dairy products
             """
         elif user_profile.food_habit == "non-vegetarian":
-            dietary_restrictions = "Include both plant-based and animal-based foods (meat, fish, poultry, etc.)"
+            dietary_restrictions = """
+            - Include meat, chicken, fish, seafood, poultry, and all animal-based foods
+            - ALSO include: vegetables, fruits, grains, dairy, EGGS, legumes, nuts, seeds
+            - EGGS are allowed and recommended for protein
+            - Mix of animal proteins (meat, fish, poultry, eggs) and plant proteins
+            """
         else:  # both
-            dietary_restrictions = "Mix of vegetarian and non-vegetarian options"
+            dietary_restrictions = """
+            - Mix of vegetarian and non-vegetarian options
+            - EGGS are only included in non-vegetarian meals
+            - Vegetarian options: no eggs, plant-based proteins only
+            """
         
         # Create detailed prompt
         prompt = PROMPT_TEMPLATES["diet_plan_prompt"].format(
@@ -214,6 +224,15 @@ class DietPlanGenerator:
         
         # Comprehensive list of non-vegetarian items to replace
         vegetarian_replacements = {
+            # Eggs (now considered non-vegetarian)
+            'eggs': 'tofu',
+            'egg': 'chickpea flour',
+            'boiled eggs': 'boiled potatoes',
+            'scrambled eggs': 'scrambled tofu',
+            'egg curry': 'paneer curry',
+            'omelet': 'besan chilla',
+            'fried egg': 'fried tofu',
+            
             # Poultry
             'chicken': 'paneer',
             'chicken breast': 'tofu steaks',

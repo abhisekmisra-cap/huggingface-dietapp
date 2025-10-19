@@ -33,7 +33,7 @@ DIET_CONFIG = {
     ],
     "vegetarian_proteins": [
         "lentils", "chickpeas", "black beans", "kidney beans", "tofu", "tempeh", 
-        "paneer", "cottage cheese", "eggs", "quinoa", "nuts", "seeds", "yogurt"
+        "paneer", "cottage cheese", "quinoa", "nuts", "seeds", "yogurt"
     ],
     "dietary_restrictions": [
         "vegan", "gluten-free", "dairy-free", 
@@ -69,6 +69,7 @@ PROMPT_TEMPLATES = {
     {dietary_restrictions}
     
     Create ONLY {food_habit} meals:
+    Note: For vegetarian diets, NO EGGS allowed. For non-vegetarian diets, eggs are allowed.
     
     BREAKFAST ({food_habit} only):
     
