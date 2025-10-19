@@ -135,7 +135,7 @@ print(diet_plan)
 ## 📁 File Structure
 
 ```
-HuggingFace/
+Huggingface-Dietapp/
 ├── app.py                     # Web interface (Flask)
 ├── main.py                    # Command-line application  
 ├── diet_plan_generator.py     # Core AI API integration
