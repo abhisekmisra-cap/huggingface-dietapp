@@ -92,7 +92,7 @@ def test_token():
         
         # Test 2: Test inference API
         print("🔄 Testing inference API...")
-        api_url = "https://api-inference.huggingface.co/models/gpt2"
+        api_url = "https://huggingface.co/api/inference/models/gpt2"
         payload = {
             "inputs": "Hello",
             "parameters": {"max_new_tokens": 5, "return_full_text": False}

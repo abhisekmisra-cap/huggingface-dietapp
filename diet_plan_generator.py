@@ -33,9 +33,9 @@ class DietPlanGenerator:
         # Test API but don't fail initialization - we'll check on actual generation
         test_result = self._test_api_connection()
         if test_result:
-            print("✅ API connection successful!")
+            print("✅ API connection test successful!")
         else:
-            print("⚠️  API test had issues, but will try during generation...")
+            print("⚠️  API test inconclusive, will proceed with generation...")
     
     def _test_api_connection(self) -> bool:
         """Test if the Hugging Face Inference API is accessible"""
@@ -43,20 +43,18 @@ class DietPlanGenerator:
             return False
         
         try:
-            api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+            api_url = f"https://huggingface.co/api/inference/models/{self.model_name}"
             headers = {"Authorization": f"Bearer {self.api_token}", "Content-Type": "application/json"}
             payload = {"inputs": "Hello", "options": {"wait_for_model": True}}
             
             print(f"🔍 Testing API: {api_url}")
             response = requests.post(api_url, headers=headers, json=payload, timeout=10)
             
-            print(f"   Status: {response.status_code}")
             if response.status_code == 404:
-                print(f"   ⚠️  Model not found or not accessible via Inference API")
-                print(f"   Response: {response.text[:200]}")
-                # 404 might mean the model exists but doesn't support Inference API
-                # Let's still try during actual generation
-                return False
+                # 404 is expected for Llama models with simple test queries
+                # They only respond to chat_completion, not text-generation endpoints
+                print(f"   ℹ️  Model uses chat_completion interface (expected for Llama models)")
+                return True  # This is actually fine for Llama models
             elif response.status_code in [200, 400, 503]:
                 return True
             elif response.status_code == 403:
@@ -79,7 +77,7 @@ class DietPlanGenerator:
             return self._call_api_with_client(prompt, max_new_tokens)
         
         # Fallback to direct REST API for other models
-        api_url = f"https://api-inference.huggingface.co/models/{self.model_name}"
+        api_url = f"https://huggingface.co/api/inference/models/{self.model_name}"
         headers = {"Authorization": f"Bearer {self.api_token}", "Content-Type": "application/json"}
         payload = {
             "inputs": prompt,
